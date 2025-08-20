@@ -1,0 +1,88 @@
+# prod
+dist/
+
+# dev
+.yarn/
+!.yarn/releases
+.vscode/*
+!.vscode/launch.json
+!.vscode/*.code-snippets
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/shelf
+
+# deps
+node_modules/
+.wrangler
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Bun
+.bun/
+*.bun
+.bun.lockb
+
+# Environment variables
+.env
+.env.*
+!.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cloudflare development variables
+.dev.vars
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor directories and files
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
+.ionide
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Bash
+*.bash
+.bash_history
+.bash_sessions/
+.bash_profile
+.bashrc
+.bash_logout
+
+# Misc
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+*.sublime-*
+*.sublime-workspace
+*.sublime-project
+*.sublime-settings
+
+# Local development
+.cache/
+.temp/
+.tmp/
+.turbo/
+.next/
+out/
+build/

@@ -1,0 +1,110 @@
+#!/bin/bash
+
+# Set the base URL
+BASE_URL="https://leamsp-api.attendance.workers.dev/api"
+
+# Generate a unique email for testing
+TEST_EMAIL="testuser_$(date +%s)@example.com"
+TEST_PASSWORD="Test@1234"
+
+# Function to print section headers
+print_header() {
+    echo -e "\n\033[1;34m=== $1 ===\033[0m"
+}
+
+# Function to print test result
+print_result() {
+    if [ "$1" -eq 0 ]; then
+        echo -e "\033[0;32m✓ $2\033[0m"
+    else
+        echo -e "\033[0;31m✗ $2\033[0m"
+    fi
+}
+
+# Test 1: Register a new user
+print_header "1. Testing User Registration"
+REGISTER_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test User",
+    "email": "'$TEST_EMAIL'",
+    "password": "'$TEST_PASSWORD'",
+    "password_confirmation": "'$TEST_PASSWORD'"
+  }')
+
+echo "Response: $REGISTER_RESPONSE"
+
+# Extract JWT token from login response
+print_header "2. Testing User Login"
+LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "'$TEST_EMAIL'",
+    "password": "'$TEST_PASSWORD'"
+  }')
+
+echo "Response: $LOGIN_RESPONSE"
+
+# Extract JWT token
+TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.token')
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+    echo "Failed to get JWT token. Cannot proceed with authenticated tests."
+    exit 1
+fi
+
+# Test 3: Get user profile
+print_header "3. Testing Get User Profile"
+PROFILE_RESPONSE=$(curl -s -X GET "$BASE_URL/user/profile" \
+  -H "Authorization: Bearer $TOKEN")
+
+echo "Profile: $PROFILE_RESPONSE"
+
+# Test 4: Create an ID Card
+print_header "4. Testing ID Card Creation"
+CARD_RESPONSE=$(curl -s -X POST "$BASE_URL/id-card" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "displayName": "Test ID Card",
+    "attributes": {
+      "department": "Engineering",
+      "role": "Developer"
+    }
+  }')
+
+echo "Card created: $CARD_RESPONSE"
+CARD_ID=$(echo $CARD_RESPONSE | jq -r '.id')
+
+# Test 5: List ID Cards
+print_header "5. Testing List ID Cards"
+LIST_RESPONSE=$(curl -s -X GET "$BASE_URL/id-card/list" \
+  -H "Authorization: Bearer $TOKEN")
+
+echo "ID Cards: $LIST_RESPONSE"
+
+# Test 6: Upload a test file
+print_header "6. Testing File Upload"
+# Create a test file
+echo "This is a test file" > test_upload.txt
+
+UPLOAD_RESPONSE=$(curl -s -X POST "$BASE_URL/upload" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@test_upload.txt" \
+  -F "type=profile")
+
+# Clean up test file
+rm test_upload.txt
+
+echo "Upload response: $UPLOAD_RESPONSE"
+
+# Test 7: Test error handling with invalid data
+print_header "7. Testing Error Handling - Invalid Registration"
+ERROR_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"","email":"invalid-email","password":"short","password_confirmation":"mismatch"}')
+
+echo "Error response: $ERROR_RESPONSE"
+
+print_header "Testing Complete!"
+echo -e "\nTest user email: $TEST_EMAIL"
+echo "JWT Token: $TOKEN"

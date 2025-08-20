@@ -1,0 +1,127 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id                    Int          @id @default(autoincrement())
+  email                 String       @unique
+  name                  String
+  password              String
+  image                 String?  
+  role                  Role         @default(USER)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  emailVerified         DateTime?
+  deletedAt             DateTime?
+  tokens                Tokens[]
+  idCards               IdCards[]
+  videos                Videos[]
+  invitationsSent       Invitation[] @relation("invitations_sent")
+  invitationsAccepted   Invitation[] @relation("invitations_accepted")
+
+  @@map("users")
+}
+
+model Videos {
+  id            Int       @id @default(autoincrement())
+  title         String
+  description   String?
+  url           String
+  thumbnailUrl  String?   @map("thumbnail_url")
+  duration      Int?      @default(0) // in seconds
+  size          Int?      // in bytes
+  mimeType      String?   @map("mime_type")
+  width         Int?
+  height        Int?
+  publicId      String?   @map("public_id")
+  isPublic      Boolean   @default(false) @map("is_public")
+  userId        Int       @map("user_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("videos")
+  @@index([userId])
+  @@index([isPublic])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Tokens {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("userId")  // Using camelCase to match the actual column name
+  type      String    @map("type")    // 'verify' | 'reset'
+  tokenHash String    @map("tokenHash")  // Using camelCase to match the actual column name
+  expiresAt DateTime  @map("expiresAt")  // Using camelCase to match the actual column name
+  usedAt    DateTime? @map("usedAt")     // Using camelCase to match the actual column name
+  createdAt DateTime  @default(now()) @map("createdAt")  // Using camelCase to match the actual column name
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tokens")
+  @@index([userId, type])
+}
+
+model IdCards {
+  id               Int       @id @default(autoincrement())
+  userId           Int       @map("user_id")
+  displayName      String    @map("display_name")
+  attributes       Json
+  imageUrl         String?   @map("image_url")
+  publicId         String?   @map("public_id")
+  // Persistent computed fields for frontend ID card rendering
+  memberSince      DateTime? @map("member_since")
+  dateOfGeneration DateTime? @map("date_of_generation")
+  validUntil       DateTime? @map("valid_until")
+  memberId         String?   @map("member_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("id_cards")
+  @@index([userId])
+  @@index([memberId])
+}
+
+model Invitation {
+  id              Int       @id @default(autoincrement())
+  email           String    @unique
+  token           String    @unique
+  expiresAt       DateTime  @map("expires_at")
+  status          String    @default("PENDING") // PENDING, ACCEPTED, EXPIRED, REVOKED
+  inviterId       Int       @map("inviter_id")
+  role            Role      @default(USER)
+  message         String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  acceptedAt      DateTime? @map("accepted_at")
+  acceptedUserId  Int?      @map("accepted_user_id")
+
+  inviter Users @relation("invitations_sent", fields: [inviterId], references: [id], onDelete: Cascade)
+  acceptedUser Users? @relation("invitations_accepted", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+
+  @@map("invitations")
+  @@index([email])
+  @@index([token])
+  @@index([status])
+  @@index([inviterId])
+  @@index([acceptedUserId])
+}
