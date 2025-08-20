@@ -5,7 +5,7 @@ import { join } from 'path';
 // Load environment variables
 config({ path: join(__dirname, '../.env') });
 
-const BASE_URL = 'https://leamsp-api.attendance.workers.dev';
+const BASE_URL = 'http://localhost:8787';
 
 // Test credentials
 const TEST_EMAIL = `test-${Date.now()}@example.com`;
@@ -19,7 +19,7 @@ async function testAuthFlow() {
     // 1. Register a test user
     console.log('1. Registering test user...');
     const registerResponse = await axios.post(
-      `${BASE_URL}/api/auth/signup`,
+      `${BASE_URL}/api/auth/register`,
       {
         name: TEST_NAME,
         email: TEST_EMAIL,
@@ -72,7 +72,7 @@ async function testAuthFlow() {
     console.log('\n3. Testing Protected Endpoint...');
     // 2. Test a protected endpoint
     const profileResponse = await axios.get(
-      `${BASE_URL}/api/user/profile`,
+      `${BASE_URL}/api/profile`,
       {
         headers: {
           'Authorization': `Bearer ${token}`,

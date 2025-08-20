@@ -31,7 +31,7 @@ const schema = z
     path: ["password_confirmation"],
   });
 
-const UserController = App.basePath("/users")
+const UserController = App.basePath("")
   /**
    * Get paginated list of users
    * Query parameters:

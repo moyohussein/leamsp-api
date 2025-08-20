@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-BASE_URL="http://localhost:39413"
+BASE_URL="http://localhost:8787"
 EMAIL="test-$(date +%s)@example.com"
 PASSWORD="SecurePass123!"
 
@@ -38,7 +38,7 @@ echo "✅ Logged in. Token obtained."
 
 # 3. Create an ID card
 echo -e "\n3. Creating ID card..."
-CREATE_CARD_RESPONSE=$(curl -s -X POST "$BASE_URL/api/id-card" \
+CREATE_CARD_RESPONSE=$(curl -s -X POST "$BASE_URL/api/id-cards" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"displayName":"Test ID Card","attributes":{"department":"Testing"}}')
@@ -55,10 +55,10 @@ echo "✅ ID Card created with ID: $CARD_ID"
 
 # 4. Generate ID card details
 echo -e "\n4. Generating ID card details..."
-GENERATE_RESPONSE=$(curl -s -X POST "$BASE_URL/api/id-card/generate" \
+GENERATE_RESPONSE=$(curl -s -X POST "$BASE_URL/api/id-cards/generate" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d "{\"cardId\": $CARD_ID}")
+  -d '{"displayName":"Test ID Card Generate","attributes":{"department":"Testing"}}')
 
 VERIFY_TOKEN=$(echo "$GENERATE_RESPONSE" | jq -r '.data?.token' 2>/dev/null || echo "")
 MEMBER_ID=$(echo "$GENERATE_RESPONSE" | jq -r '.data?.memberId' 2>/dev/null || echo "")
@@ -74,7 +74,7 @@ echo "Generated token: $VERIFY_TOKEN"
 
 # 5. Verify the token
 echo -e "\n5. Verifying token..."
-VERIFY_RESPONSE=$(curl -s "$BASE_URL/api/id-card/verify/$VERIFY_TOKEN")
+VERIFY_RESPONSE=$(curl -s "$BASE_URL/api/id-cards/verify/$VERIFY_TOKEN")
 VERIFY_VALID=$(echo "$VERIFY_RESPONSE" | jq -r '.data?.valid' 2>/dev/null || echo "")
 
 if [ "$VERIFY_VALID" != "true" ]; then

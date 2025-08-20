@@ -3,6 +3,7 @@ export type Bindings = {
   JWT_SECRET: string;
   BREVO_API_KEY: string;
   DEV_MODE?: string;
+  EMAIL_FROM?: string;
   ENVIRONMENT?: 'development' | 'production';
   CLOUDINARY_CLOUD_NAME?: string;
   CLOUDINARY_UPLOAD_PRESET?: string;

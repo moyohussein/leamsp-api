@@ -58,7 +58,7 @@ async function runTests() {
     // 3. Test ID Card Generation
     console.log('\n3. Testing ID Card Generation...');
     const idCardResponse = await axios.post(
-      `${BASE_URL}/api/id-card/generate`,
+      `${BASE_URL}/api/id-cards/generate`,
       idCardData,
       { headers: getAuthHeaders(authToken) }
     );

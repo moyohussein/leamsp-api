@@ -6,6 +6,8 @@ import Response from '~/utils/response';
 import { Role } from '@prisma/client';
 import { generateToken, hashPassword } from '~/utils/crypto';
 import { rateLimit } from '~/middleware/rate-limit';
+import { EmailService } from '~/services/email-service';
+import type { Bindings } from '~/types';
 
 // Validation schemas
 const createInvitationSchema = z.object({
@@ -32,8 +34,82 @@ const invitationRateLimit = rateLimit({
   max: 5,
 });
 
+// Helper function to initialize email service with environment variables
+async function initEmailService(env: Bindings) {
+  const emailService = new EmailService(
+    env.BREVO_API_KEY,
+    env.EMAIL_FROM || 'noreply@leamspoyostate.com',
+    'LeamSP'
+  );
+  
+  await emailService.initialize(env.BREVO_API_KEY);
+  return emailService;
+}
+
+// Helper function to send invitation email
+async function sendInvitationEmail(
+  emailService: EmailService,
+  email: string,
+  token: string,
+  inviterName: string,
+  customMessage?: string,
+  role?: string,
+  baseUrl?: string
+): Promise<{ success: boolean; error?: string }> {
+  const acceptUrl = `${baseUrl || 'http://localhost:3000'}/accept-invitation?token=${token}`;
+  
+  const subject = `You're invited to join LeamSP`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h1 style="color: #2563eb;">You're Invited to Join LeamSP!</h1>
+      <p>Hello,</p>
+      <p>${inviterName} has invited you to join LeamSP${role ? ` as a ${role.toLowerCase()}` : ''}.</p>
+      ${customMessage ? `<div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;"><p style="margin: 0; font-style: italic;">"${customMessage}"</p></div>` : ''}
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${acceptUrl}" 
+           style="background-color: #2563eb; color: white; padding: 12px 24px; 
+                  text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">
+          Accept Invitation
+        </a>
+      </div>
+      <p>Or copy and paste this URL into your browser:</p>
+      <p style="word-break: break-all; color: #6b7280;">${acceptUrl}</p>
+      <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
+        This invitation will expire in 7 days.
+      </p>
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+      <p style="color: #6b7280; font-size: 12px;">
+        If you didn't expect this invitation, you can safely ignore this email.
+      </p>
+    </div>
+  `;
+
+  const text = `You're invited to join LeamSP!
+
+${inviterName} has invited you to join LeamSP${role ? ` as a ${role.toLowerCase()}` : ''}.
+
+${customMessage ? `Message: "${customMessage}"
+
+` : ''}To accept this invitation, visit:
+${acceptUrl}
+
+This invitation will expire in 7 days.
+
+If you didn't expect this invitation, you can safely ignore this email.`;
+
+  return emailService.sendEmail({
+    to: email,
+    subject,
+    html,
+    text,
+    sender: {
+      email: 'noreply@leamspoyostate.com',
+      name: 'LeamSP Invitations'
+    }
+  });
+}
+
 const InvitationController = new Hono()
-  .basePath('/invitations')
   
   // Create invitation
   .post('/', invitationRateLimit, async (c) => {
@@ -60,6 +136,16 @@ const InvitationController = new Hono()
       if (existingUser) return new Response(c).error('User already exists', 400);
       if (existingInvitation) return new Response(c).error('Pending invitation exists', 400);
       
+      // Get current user's info for the email
+      const inviter = await db(c.env).users.findUnique({
+        where: { id: parseInt(currentUser.id) },
+        select: { id: true, name: true, email: true }
+      });
+      
+      if (!inviter) {
+        return new Response(c).error('Inviter not found', 400);
+      }
+      
       // Create invitation
       const token = await generateToken();
       const invitation = await db(c.env).invitation.create({
@@ -73,12 +159,66 @@ const InvitationController = new Hono()
         },
       });
       
-      // TODO: Send invitation email
-      
-      return new Response(c).success({
-        message: 'Invitation sent',
-        data: { id: invitation.id, email: invitation.email },
-      });
+      // Send invitation email
+      try {
+        const env = c.env as Bindings;
+        const emailService = await initEmailService(env);
+        
+        // Get the base URL from the request or use default
+        const baseUrl = c.req.header('Origin') || 'http://localhost:3000';
+        
+        const emailResult = await sendInvitationEmail(
+          emailService,
+          email,
+          token,
+          inviter.name || 'LeamSP Team',
+          message,
+          role,
+          baseUrl
+        );
+        
+        if (!emailResult.success) {
+          console.error('Failed to send invitation email:', emailResult.error);
+          // In development, we might want to continue even if email fails
+          if (env.ENVIRONMENT === 'production') {
+            // In production, we might want to fail the whole operation
+            // Delete the created invitation since we couldn't send the email
+            await db(c.env).invitation.delete({ where: { id: invitation.id } });
+            return new Response(c).error('Failed to send invitation email', 500);
+          }
+        }
+        
+        return new Response(c).success({
+          message: 'Invitation sent successfully',
+          data: { 
+            id: invitation.id, 
+            email: invitation.email,
+            expiresAt: invitation.expiresAt.toISOString(),
+            // In development mode, include the token for testing
+            ...(env.ENVIRONMENT === 'development' && { devToken: token })
+          },
+        });
+        
+      } catch (emailError) {
+        console.error('Error sending invitation email:', emailError);
+        
+        // In development, continue even if email fails
+        if (c.env.ENVIRONMENT === 'development') {
+          return new Response(c).success({
+            message: 'Invitation created (email service unavailable)',
+            data: { 
+              id: invitation.id, 
+              email: invitation.email,
+              devToken: token,
+              warning: 'Email could not be sent - using development mode'
+            },
+          });
+        }
+        
+        // In production, clean up and fail
+        await db(c.env).invitation.delete({ where: { id: invitation.id } });
+        return new Response(c).error('Failed to send invitation email', 500);
+      }
       
     } catch (error) {
       console.error('Create invitation error:', error);

@@ -1,14 +1,18 @@
 import type { Bindings } from "~/types";
 
-// Minimal OpenAPI 3.0 spec for implemented endpoints
+// Comprehensive OpenAPI 3.0 spec for all API endpoints
 export const openApiSpec = {
   openapi: "3.0.3",
   info: {
-    title: "leamsp-api",
+    title: "LeamSP API",
     version: "1.0.0",
-    description: "OpenAPI spec for implemented authentication and profile endpoints",
+    description: "LeamSP API - A Cloudflare Workers-based backend built with Hono.js, D1 database, and JWT authentication",
+    contact: {
+      name: "LeamSP Support",
+      email: "support@leamspoyostate.com"
+    }
   },
-  servers: [{ url: "/api" }],
+  servers: [{ url: "/api", description: "API Base URL" }],
   paths: {
     "/auth/login": {
       post: {
@@ -61,9 +65,9 @@ export const openApiSpec = {
         },
       },
     },
-    "/auth/signup": {
+    "/auth/register": {
       post: {
-        summary: "Signup",
+        summary: "Register new user account",
         requestBody: {
           required: true,
           content: {
@@ -72,18 +76,46 @@ export const openApiSpec = {
                 type: "object",
                 required: ["name", "email", "password", "password_confirmation"],
                 properties: {
-                  name: { type: "string" },
-                  email: { type: "string", format: "email" },
-                  password: { type: "string" },
-                  password_confirmation: { type: "string" },
+                  name: { type: "string", minLength: 3, maxLength: 60 },
+                  email: { type: "string", format: "email", minLength: 3, maxLength: 60 },
+                  password: { 
+                    type: "string", 
+                    minLength: 8,
+                    description: "Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character"
+                  },
+                  password_confirmation: { type: "string", minLength: 8 },
                 },
               },
             },
           },
         },
         responses: {
-          "200": { description: "Created" },
+          "200": {
+            description: "Registration successful",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer" },
+                        email: { type: "string" },
+                        name: { type: "string" },
+                        emailVerified: { type: "string", nullable: true },
+                        message: { type: "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
           "400": { description: "Validation error" },
+          "409": { description: "Email already registered" },
+          "500": { description: "Internal server error" },
         },
       },
     },
@@ -249,12 +281,137 @@ export const openApiSpec = {
         responses: { "200": { description: "OK" }, "401": { description: "Unauthorized" } },
       },
     },
+    "/auth/me": {
+      get: {
+        summary: "Get current user information from JWT token",
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": {
+            description: "Current user data",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer" },
+                        email: { type: "string" },
+                        name: { type: "string" },
+                        role: { type: "string", enum: ["USER", "ADMIN"] }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { description: "Unauthorized" },
+        },
+      },
+    },
+    "/auth/delete-account": {
+      post: {
+        summary: "Schedule account deletion and redact sensitive data",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["confirm"],
+                properties: {
+                  confirm: { type: "boolean", description: "Must be true to confirm deletion" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Deletion scheduled",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: {
+                      type: "object",
+                      properties: {
+                        scheduledAt: { type: "string", format: "date-time" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": { description: "Invalid request or confirmation required" },
+          "401": { description: "Unauthorized" },
+        },
+      },
+    },
+    "/auth/request-export": {
+      post: {
+        summary: "Request an export of user data via email",
+        security: [{ bearerAuth: [] }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["format"],
+                properties: {
+                  format: { type: "string", enum: ["json", "csv"] }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": {
+            description: "Export request processed",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "object", properties: { ok: { type: "boolean" } } }
+                  }
+                }
+              }
+            }
+          },
+          "400": { description: "Invalid format" },
+          "401": { description: "Unauthorized" },
+        },
+      },
+    },
     "/admin/ping": {
       get: {
         summary: "Admin ping (admin-only)",
         security: [{ bearerAuth: [] }],
         responses: {
-          "200": { description: "OK" },
+          "200": {
+            description: "Admin ping successful",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean" },
+                    data: { type: "object", properties: { pong: { type: "boolean" } } }
+                  }
+                }
+              }
+            }
+          },
           "401": { description: "Unauthorized" },
           "403": { description: "Forbidden - requires ADMIN role" },
         },

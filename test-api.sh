@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the base URL
-BASE_URL="https://leamsp-api.attendance.workers.dev/api"
+BASE_URL="http://localhost:8787/api"
 
 # Generate a unique email for testing
 TEST_EMAIL="testuser_$(date +%s)@example.com"
@@ -46,7 +46,7 @@ LOGIN_RESPONSE=$(curl -s -X POST "$BASE_URL/auth/login" \
 echo "Response: $LOGIN_RESPONSE"
 
 # Extract JWT token
-TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.token')
+TOKEN=$(echo $LOGIN_RESPONSE | jq -r '.data.token')
 if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
     echo "Failed to get JWT token. Cannot proceed with authenticated tests."
     exit 1
@@ -54,14 +54,14 @@ fi
 
 # Test 3: Get user profile
 print_header "3. Testing Get User Profile"
-PROFILE_RESPONSE=$(curl -s -X GET "$BASE_URL/user/profile" \
+PROFILE_RESPONSE=$(curl -s -X GET "$BASE_URL/profile" \
   -H "Authorization: Bearer $TOKEN")
 
 echo "Profile: $PROFILE_RESPONSE"
 
 # Test 4: Create an ID Card
 print_header "4. Testing ID Card Creation"
-CARD_RESPONSE=$(curl -s -X POST "$BASE_URL/id-card" \
+CARD_RESPONSE=$(curl -s -X POST "$BASE_URL/id-cards" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -73,27 +73,27 @@ CARD_RESPONSE=$(curl -s -X POST "$BASE_URL/id-card" \
   }')
 
 echo "Card created: $CARD_RESPONSE"
-CARD_ID=$(echo $CARD_RESPONSE | jq -r '.id')
+CARD_ID=$(echo $CARD_RESPONSE | jq -r '.data.id')
 
 # Test 5: List ID Cards
 print_header "5. Testing List ID Cards"
-LIST_RESPONSE=$(curl -s -X GET "$BASE_URL/id-card/list" \
+LIST_RESPONSE=$(curl -s -X GET "$BASE_URL/id-cards/list" \
   -H "Authorization: Bearer $TOKEN")
 
 echo "ID Cards: $LIST_RESPONSE"
 
 # Test 6: Upload a test file
 print_header "6. Testing File Upload"
-# Create a test file
-echo "This is a test file" > test_upload.txt
+# Create a test image file (1x1 pixel PNG)
+echo -e '\x89PNG\x0d\x0a\x1a\x0a\x00\x00\x00\x0dIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\x0bIDATx\x9cc\xf8\x0f\x00\x00\x01\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x0a' > test_upload.png
 
 UPLOAD_RESPONSE=$(curl -s -X POST "$BASE_URL/upload" \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@test_upload.txt" \
+  -F "file=@test_upload.png" \
   -F "type=profile")
 
 # Clean up test file
-rm test_upload.txt
+rm -f test_upload.png
 
 echo "Upload response: $UPLOAD_RESPONSE"
 

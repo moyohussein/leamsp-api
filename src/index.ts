@@ -68,8 +68,8 @@ app.use("*", (c, next) => {
   // Allow public endpoints
   const isPublic =
     guestPage.includes(path) ||
-    path.startsWith("/api/id-card/verify/") ||
-    /^\/api\/id-card\/\d+\/image$/.test(path);
+    path.startsWith("/api/id-cards/verify/") ||
+    /^\/api\/id-cards\/\d+\/image$/.test(path);
   if (isPublic) {
     return next();
   }
@@ -110,8 +110,35 @@ app.get("/api/docs", (c) =>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>leamsp-api Docs</title>
+    <title>LeamSP API Documentation</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      .swagger-ui .topbar {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-bottom: 1px solid #e3e3e3;
+      }
+      .swagger-ui .topbar .download-url-wrapper {
+        display: none;
+      }
+      .swagger-ui .info {
+        margin: 20px 0;
+      }
+      .swagger-ui .info .title {
+        color: #3b4151;
+        font-size: 36px;
+        margin: 0;
+      }
+      .swagger-ui .scheme-container {
+        background: #fafafa;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+    </style>
   </head>
   <body>
     <div id="swagger-ui"></div>
@@ -120,6 +147,21 @@ app.get("/api/docs", (c) =>
       window.ui = SwaggerUIBundle({
         url: '/api/openapi.json',
         dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIBundle.presets.standalone
+        ],
+        layout: "StandaloneLayout",
+        validatorUrl: null,
+        tryItOutEnabled: true,
+        filter: true,
+        displayRequestDuration: true,
+        docExpansion: 'list',
+        defaultModelRendering: 'example',
+        showExtensions: true,
+        showCommonExtensions: true,
+        supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch']
       });
     </script>
   </body>
@@ -139,6 +181,7 @@ app.route("/api/profile", ProfileController);
 app.route("/api/id-cards", IdCardController);
 app.route("/api/videos", VideoController);
 app.route("/api/invitations", InvitationController);
+app.route("/api", UploadController);
 
 // Admin-only sample route
 app.get("/api/admin/ping", requireAdmin(), (c) => c.json({ success: true, data: { pong: true } }));

@@ -1,10 +1,14 @@
 export const openApiYaml = `openapi: 3.0.3
 info:
-  title: leamsp-api
+  title: LeamSP API
   version: 1.0.0
-  description: OpenAPI spec for implemented authentication and profile endpoints
+  description: LeamSP API - A Cloudflare Workers-based backend built with Hono.js, D1 database, and JWT authentication
+  contact:
+    name: LeamSP Support
+    email: support@leamspoyostate.com
 servers:
   - url: /api
+    description: API Base URL
 paths:
   /auth/login:
     post:
@@ -55,7 +59,7 @@ paths:
           description: Invalid credentials
   /auth/register:
     post:
-      summary: Register
+      summary: Register new user account
       requestBody:
         required: true
         content:
@@ -66,18 +70,50 @@ paths:
               properties:
                 name:
                   type: string
+                  minLength: 3
+                  maxLength: 60
                 email:
                   type: string
                   format: email
+                  minLength: 3
+                  maxLength: 60
                 password:
                   type: string
+                  minLength: 8
+                  description: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number and one special character
                 password_confirmation:
                   type: string
+                  minLength: 8
       responses:
         '200':
-          description: Created
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      emailVerified:
+                        type: string
+                        nullable: true
+                      message:
+                        type: string
         '400':
           description: Validation error
+        '409':
+          description: Email already registered
+        '500':
+          description: Internal server error
   /auth/verify-email:
     post:
       summary: Issue email verification token
@@ -249,6 +285,35 @@ paths:
           description: Unauthorized
         '403':
           description: Forbidden - requires ADMIN role
+  /auth/me:
+    get:
+      summary: Get current user information from JWT token
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      role:
+                        type: string
+                        enum: [USER, ADMIN]
+        '401':
+          description: Unauthorized
   /auth/delete-account:
     post:
       summary: Schedule account deletion and redact sensitive data
