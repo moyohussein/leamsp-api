@@ -23,8 +23,9 @@ app.use("*", securityHeaders());
 app.use("*", cors({
   origin: [
     "http://localhost:3000",
-    // Add additional allowed origins here (e.g., production frontend URL)
-    // "https://your-frontend.example.com",
+    // Production frontend URLs
+    "https://www.leamspoyostate.com",
+    "https://leamspoyostate.com",
   ],
   allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowHeaders: ["Content-Type", "Authorization"],
@@ -110,7 +111,7 @@ app.get("/api/docs", (c) =>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LeamSP API Documentation</title>
+    <title>Leamsp  API Documentation</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
     <style>
       body {

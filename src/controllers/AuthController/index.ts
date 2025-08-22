@@ -34,7 +34,7 @@ type Bindings = {
 async function initEmailService(env: { BREVO_API_KEY: string; EMAIL_FROM?: string }) {
   await emailService.initialize(env.BREVO_API_KEY);
   if (env.EMAIL_FROM) {
-    emailService.setDefaultSender(env.EMAIL_FROM, 'LeamSP');
+    emailService.setDefaultSender(env.EMAIL_FROM, 'Leamsp oyo state');
   }
 }
 

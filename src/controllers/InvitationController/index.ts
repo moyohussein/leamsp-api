@@ -84,9 +84,9 @@ async function sendInvitationEmail(
     </div>
   `;
 
-  const text = `You're invited to join LeamSP!
+  const text = `You're invited to join Leamsp Oyo State!
 
-${inviterName} has invited you to join LeamSP${role ? ` as a ${role.toLowerCase()}` : ''}.
+${inviterName} has invited you to join Leamsp oyo state ${role ? ` as a ${role.toLowerCase()}` : ''}.
 
 ${customMessage ? `Message: "${customMessage}"
 
@@ -104,7 +104,7 @@ If you didn't expect this invitation, you can safely ignore this email.`;
     text,
     sender: {
       email: 'noreply@leamspoyostate.com',
-      name: 'LeamSP Invitations'
+      name: 'Leamsp oyo state Invitations'
     }
   });
 }
@@ -171,7 +171,7 @@ const InvitationController = new Hono()
           emailService,
           email,
           token,
-          inviter.name || 'LeamSP Team',
+          inviter.name || 'Leamsp oyo state',
           message,
           role,
           baseUrl

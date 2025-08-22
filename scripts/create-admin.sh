@@ -13,11 +13,11 @@ DEFAULT_PASSWORD="password@123"
 
 # Hash the password (using Node's built-in crypto module)
 HASHED_PASSWORD=$(node -e "
-  const crypto = require('crypto');
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync('$DEFAULT_PASSWORD', salt, 1000, 64, 'sha512').toString('hex');
-  console.log('$2a$10$' + salt + hash);
+  const { hashSync } = require('bcrypt-ts');
+  const hashedPassword = hashSync('$DEFAULT_PASSWORD', 8);
+  console.log(hashedPassword);
 ")
+echo "Hashed password: $HASHED_PASSWORD"
 
 # Current timestamp in ISO format
 CURRENT_TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")

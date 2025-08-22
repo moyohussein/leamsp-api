@@ -16,8 +16,8 @@ fi
 export ENVIRONMENT="production"
 
 # Build the project
-echo "🔨 Building the project..."
-npm run build
+# echo "🔨 Building the project..."
+# npm run build
 
 # Deploy to production
 echo "🚀 Deploying to Cloudflare Workers..."

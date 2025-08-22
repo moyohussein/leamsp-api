@@ -2,9 +2,9 @@ export const openApiYaml = `openapi: 3.0.3
 info:
   title: LeamSP API
   version: 1.0.0
-  description: LeamSP API - A Cloudflare Workers-based backend built with Hono.js, D1 database, and JWT authentication
+  description: Leamsp oyo state API - A Cloudflare Workers-based backend built with Hono.js, D1 database, and JWT authentication
   contact:
-    name: LeamSP Support
+    name: Leamsp oyo state Support
     email: support@leamspoyostate.com
 servers:
   - url: /api

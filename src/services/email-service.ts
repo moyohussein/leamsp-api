@@ -158,7 +158,7 @@ This link will expire in 24 hours.`;
       text,
       sender: {
         email: this.defaultSender.email,
-        name: 'LeamSP Verification'
+        name: 'Leamsp oyo state Verification'
       }
     });
   }
