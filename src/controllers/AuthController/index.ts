@@ -267,7 +267,7 @@ Router.post("/forgot-password", async (c) => {
       });
       
       // Create reset URL
-      const resetUrl = new URL('/reset-password', c.req.url);
+      const resetUrl = new URL('/auth/reset-password', c.req.url);
       resetUrl.searchParams.set('token', rawToken);
       
       // Send password reset email using Brevo service
@@ -435,7 +435,7 @@ const AuthController = Router
         );
         
         // Create verification URL
-        const verificationUrl = `${c.req.header('Origin') || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+        const verificationUrl = `${c.req.header('Origin') || 'https://www.leamspoyostate.com/'}/verify-email?token=${verificationToken}`;
         
         // Send verification email
         await emailService.sendVerificationEmail(

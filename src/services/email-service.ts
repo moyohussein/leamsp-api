@@ -210,7 +210,7 @@ If you didn't request this, please ignore this email and your password will rema
       text,
       sender: {
         email: this.defaultSender.email,
-        name: 'LeamSP Support'
+        name: 'Leamsp oyo state Support'
       }
     });
   }

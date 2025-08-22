@@ -22,7 +22,7 @@ app.use("*", securityHeaders());
 // CORS for browser clients (allow your local dev frontend and credentials)
 app.use("*", cors({
   origin: [
-    "http://localhost:3000",
+    "https://www.leamspoyostate.com/",
     // Production frontend URLs
     "https://www.leamspoyostate.com",
     "https://leamspoyostate.com",

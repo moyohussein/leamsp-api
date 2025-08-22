@@ -39,7 +39,7 @@ async function initEmailService(env: Bindings) {
   const emailService = new EmailService(
     env.BREVO_API_KEY,
     env.EMAIL_FROM || 'noreply@leamspoyostate.com',
-    'LeamSP'
+    'Leamsp oyo state'
   );
   
   await emailService.initialize(env.BREVO_API_KEY);
@@ -56,14 +56,14 @@ async function sendInvitationEmail(
   role?: string,
   baseUrl?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const acceptUrl = `${baseUrl || 'http://localhost:3000'}/accept-invitation?token=${token}`;
+  const acceptUrl = `${baseUrl || 'https://www.leamspoyostate.com/'}/accept-invitation?token=${token}`;
   
-  const subject = `You're invited to join LeamSP`;
+  const subject = `You're invited to join Leamsp Oyo state`;
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h1 style="color: #2563eb;">You're Invited to Join LeamSP!</h1>
+      <h1 style="color: #2563eb;">You're Invited to Join Leamsp Oyo state!</h1>
       <p>Hello,</p>
-      <p>${inviterName} has invited you to join LeamSP${role ? ` as a ${role.toLowerCase()}` : ''}.</p>
+      <p>${inviterName} has invited you to join Leamsp Oyo state</p>
       ${customMessage ? `<div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;"><p style="margin: 0; font-style: italic;">"${customMessage}"</p></div>` : ''}
       <div style="text-align: center; margin: 30px 0;">
         <a href="${acceptUrl}" 
@@ -86,7 +86,7 @@ async function sendInvitationEmail(
 
   const text = `You're invited to join Leamsp Oyo State!
 
-${inviterName} has invited you to join Leamsp oyo state ${role ? ` as a ${role.toLowerCase()}` : ''}.
+${inviterName} has invited you to join Leamsp Oyo State.
 
 ${customMessage ? `Message: "${customMessage}"
 
@@ -165,7 +165,7 @@ const InvitationController = new Hono()
         const emailService = await initEmailService(env);
         
         // Get the base URL from the request or use default
-        const baseUrl = c.req.header('Origin') || 'http://localhost:3000';
+        const baseUrl = c.req.header('Origin') || 'https://www.leamspoyostate.com/';
         
         const emailResult = await sendInvitationEmail(
           emailService,
@@ -388,7 +388,7 @@ const InvitationController = new Hono()
       try {
         const env = c.env as Bindings;
         const emailService = await initEmailService(env);
-        const baseUrl = c.req.header('Origin') || 'http://localhost:3000';
+        const baseUrl = c.req.header('Origin') || 'https://www.leamspoyostate.com/';
         
         const emailResult = await sendInvitationEmail(
           emailService,

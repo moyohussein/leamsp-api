@@ -9,7 +9,7 @@ export function cors() {
   return honoCors({
     // Allow requests from these origins
     origin: [
-      'http://localhost:3000', // Local development
+      'https://www.leamspoyostate.com/', // Local development
       'http://localhost:5173', // Common Vite dev server port
       'https://your-production-domain.com', // Replace with your production domain
     ],

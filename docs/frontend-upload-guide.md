@@ -24,7 +24,7 @@ Base URL: your app should call the API at `/api` on the same origin in developme
 
 1) Obtain a JWT by calling `/api/auth/login`.
 2) Ensure your frontend origin is allowed by CORS:
-   - Current allowed origins (code): `http://localhost:3000`.
+   - Current allowed origins (code): `https://www.leamspoyostate.com/`.
    - In production, add your frontend URL to the CORS `origin` array in `src/index.ts`.
 
 ---
