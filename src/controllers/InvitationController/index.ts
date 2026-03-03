@@ -16,6 +16,15 @@ const createInvitationSchema = z.object({
   message: z.string().optional(),
 });
 
+// Bulk invitation schema
+const bulkInvitationSchema = z.object({
+  invitations: z.array(z.object({
+    email: z.string().email('Invalid email address'),
+    role: z.nativeEnum(Role).default('USER'),
+  })).min(1).max(100), // Allow up to 100 invitations at once
+  message: z.string().optional(),
+});
+
 const acceptInvitationSchema = z.object({
   token: z.string().min(1, 'Token is required'),
   name: z.string().min(2, 'Name is required'),
@@ -278,7 +287,128 @@ const InvitationController = new Hono()
       return new Response(c).error('Failed to create invitation', 500);
     }
   })
-  
+
+  // Bulk create invitations
+  .post('/bulk', invitationRateLimit, async (c) => {
+    try {
+      const currentUser = c.get('user');
+      if (!currentUser) return new Response(c).error('Unauthorized', 401);
+
+      const data = await c.req.json();
+      const { invitations, message } = bulkInvitationSchema.parse(data);
+
+      const results = {
+        success: [] as Array<{ email: string; id: number; token?: string }>,
+        failed: [] as Array<{ email: string; error: string }>,
+      };
+
+      const env = c.env as Bindings;
+      const emailService = await initEmailService(env);
+      const baseUrl = c.req.header('Origin') || 'https://www.leamspoyostate.com/';
+      const inviter = await db(c.env).users.findUnique({
+        where: { id: parseInt(currentUser.id) },
+        select: { id: true, name: true, email: true }
+      });
+
+      if (!inviter) {
+        return new Response(c).error('Inviter not found', 400);
+      }
+
+      // Process invitations in batches
+      for (const invite of invitations) {
+        try {
+          const email = invite.email.toLowerCase();
+          
+          // Check for existing user or pending invitation
+          const [existingUser, existingInvitation] = await Promise.all([
+            db(c.env).users.findUnique({ where: { email } }),
+            db(c.env).invitation.findFirst({
+              where: {
+                email,
+                status: 'PENDING',
+                expiresAt: { gt: new Date() }
+              },
+            }),
+          ]);
+
+          if (existingUser) {
+            results.failed.push({ email, error: 'User already exists' });
+            continue;
+          }
+
+          if (existingInvitation) {
+            results.failed.push({ email, error: 'Pending invitation exists' });
+            continue;
+          }
+
+          // Create invitation
+          const token = await generateToken();
+          const invitation = await db(c.env).invitation.create({
+            data: {
+              email,
+              token,
+              expiresAt: addDays(new Date(), 7),
+              inviterId: parseInt(currentUser.id),
+              role: invite.role,
+              message: message || undefined,
+            },
+          });
+
+          // Try to send email (don't fail if it fails)
+          try {
+            await sendInvitationEmail(
+              emailService,
+              email,
+              token,
+              inviter.name || 'Leamsp oyo state',
+              message,
+              invite.role,
+              baseUrl
+            );
+          } catch (emailError) {
+            console.error(`Failed to send email to ${email}:`, emailError);
+            // Continue even if email fails in dev mode
+            if (env.ENVIRONMENT === 'production') {
+              await db(c.env).invitation.delete({ where: { id: invitation.id } });
+              results.failed.push({ email, error: 'Failed to send email' });
+              continue;
+            }
+          }
+
+          results.success.push({
+            email,
+            id: invitation.id,
+            ...(env.ENVIRONMENT === 'development' && { token }),
+          });
+
+        } catch (error: any) {
+          results.failed.push({
+            email: invite.email,
+            error: error.message || 'Unknown error',
+          });
+        }
+      }
+
+      // Return summary
+      return new Response(c).success({
+        message: `Bulk invitation completed: ${results.success.length} sent, ${results.failed.length} failed`,
+        data: {
+          total: invitations.length,
+          success: results.success.length,
+          failed: results.failed.length,
+          results,
+        },
+      });
+
+    } catch (error) {
+      console.error('Bulk invitation error:', error);
+      if (error instanceof z.ZodError) {
+        return new Response(c).error('Validation error', 400, { errors: error.errors });
+      }
+      return new Response(c).error('Failed to process bulk invitations', 500);
+    }
+  })
+
   // List invitations with pagination
   // Accept invitation
   .post('/accept', async (c) => {
