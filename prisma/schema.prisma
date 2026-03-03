@@ -19,7 +19,7 @@ model Users {
   email                 String       @unique
   name                  String
   password              String
-  image                 String?  
+  image                 String?
   role                  Role         @default(USER)
   createdAt             DateTime     @default(now())
   updatedAt             DateTime     @updatedAt
@@ -32,6 +32,10 @@ model Users {
   invitationsAccepted   Invitation[] @relation("invitations_accepted")
 
   @@map("users")
+  @@index([role])
+  @@index([createdAt])
+  @@index([emailVerified])
+  @@index([role, createdAt])
 }
 
 model Videos {
@@ -57,6 +61,9 @@ model Videos {
   @@map("videos")
   @@index([userId])
   @@index([isPublic])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([isPublic, createdAt])
 }
 
 enum Role {
@@ -77,6 +84,9 @@ model Tokens {
 
   @@map("tokens")
   @@index([userId, type])
+  @@index([expiresAt])
+  @@index([type, expiresAt])
+  @@index([usedAt])
 }
 
 model IdCards {
@@ -99,6 +109,8 @@ model IdCards {
   @@map("id_cards")
   @@index([userId])
   @@index([memberId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 model Invitation {
@@ -124,4 +136,8 @@ model Invitation {
   @@index([status])
   @@index([inviterId])
   @@index([acceptedUserId])
+  @@index([createdAt])
+  @@index([expiresAt])
+  @@index([status, email])
+  @@index([inviterId, status])
 }
