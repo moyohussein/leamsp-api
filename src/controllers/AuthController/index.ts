@@ -1,4 +1,4 @@
-import { compareSync, hashSync } from "bcrypt-ts";
+import bcrypt from "bcryptjs";
 import { Hono } from "hono";
 import { z } from "zod";
 import App from "~/app";
@@ -127,9 +127,10 @@ Router.post("/verify-email", async (c) => {
         EMAIL_FROM: env.EMAIL_FROM
       });
       
-      // Create verification URL
-      const verificationUrl = new URL('/auth/verify-email', c.req.url);
-      verificationUrl.searchParams.set('token', token);
+      // Create verification URL that points to the API endpoint
+      const verificationUrl = new URL(c.req.url); // Gets the base from the current request
+      verificationUrl.pathname = '/api/auth/verify-email'; // Sets the correct API path
+      verificationUrl.search = `?token=${token}`; // Adds the token
       
       // Send verification email using Brevo service
       await emailService.sendVerificationEmail(
@@ -160,9 +161,11 @@ Router.post("/verify-email", async (c) => {
 Router.get("/verify-email", async (c) => {
   const url = new URL(c.req.url);
   const token = url.searchParams.get("token") ?? "";
+  const frontendUrl = c.env.FRONTEND_URL || 'https://www.leamspoyostate.com';
   
   if (!token) {
-    return new Response(c).error("Verification token is required", 400);
+    // Redirect to a frontend error page if token is missing
+    return c.redirect(`${frontendUrl}/email-verified?status=error&code=TOKEN_MISSING`);
   }
 
   try {
@@ -171,12 +174,12 @@ Router.get("/verify-email", async (c) => {
     
     // Check if token is for email verification
     if (payload.purpose !== 'email-verification') {
-      return new Response(c).error("Invalid verification token", 400);
+      return c.redirect(`${frontendUrl}/email-verified?status=error&code=INVALID_TOKEN`);
     }
     
     // Check if token is expired
     if (expired) {
-      return new Response(c).error("Verification link has expired. Please request a new one.", 400);
+      return c.redirect(`${frontendUrl}/email-verified?status=error&code=EXPIRED_LINK`);
     }
     
     // Find the user
@@ -185,18 +188,13 @@ Router.get("/verify-email", async (c) => {
       select: { id: true, email: true, emailVerified: true }
     });
     
-    if (!user) {
-      return new Response(c).error("User not found", 404);
-    }
-    
-    // Check if email matches
-    if (user.email !== payload.email) {
-      return new Response(c).error("Invalid verification token", 400);
+    if (!user || user.email !== payload.email) {
+      return c.redirect(`${frontendUrl}/email-verified?status=error&code=INVALID_TOKEN`);
     }
     
     // Check if already verified
     if (user.emailVerified) {
-      return c.redirect("/email-verified?status=already-verified");
+      return c.redirect(`${frontendUrl}/email-verified?status=already-verified`);
     }
     
     // Update user as verified
@@ -206,10 +204,11 @@ Router.get("/verify-email", async (c) => {
     });
     
     // Redirect to success page (frontend should handle this)
-    return c.redirect("/email-verified?status=success");
+    return c.redirect(`${frontendUrl}/email-verified?status=success`);
   } catch (error) {
     console.error("Error verifying email:", error);
-    return new Response(c).error("Invalid or expired verification link. Please request a new one.", 400);
+    // Redirect to a generic error page on the frontend
+    return c.redirect(`${frontendUrl}/email-verified?status=error&code=SERVER_ERROR`);
   }
 });
 
@@ -267,7 +266,7 @@ Router.post("/forgot-password", async (c) => {
       });
       
       // Create reset URL
-      const resetUrl = new URL('/auth/reset-password', c.req.url);
+      const resetUrl = new URL('https://leamspoyostate.com/auth/reset-password');
       resetUrl.searchParams.set('token', rawToken);
       
       // Send password reset email using Brevo service
@@ -320,7 +319,7 @@ Router.post("/reset-password", async (c) => {
     if (!rec || rec.expiresAt < now) {
       return new Response(c).error("Token expired or invalid", 410 as any);
     }
-    const hashed = hashSync(body.newPassword, 8);
+    const hashed = await bcrypt.hash(body.newPassword, 10);
     await db(c.env).users.update({ where: { id: rec.userId }, data: { password: hashed } });
     await (db(c.env) as any).tokens.update({ where: { id: rec.id }, data: { usedAt: now } });
     return new Response(c).success({ ok: true });
@@ -353,7 +352,7 @@ const AuthController = Router
         );
       }
 
-      const isPasswordCorrect = compareSync(data.password, user?.password);
+      const isPasswordCorrect = await bcrypt.compare(data.password, user.password);
 
       if (!isPasswordCorrect) {
         return new Response(c).error(
@@ -397,8 +396,8 @@ const AuthController = Router
     async (c) => {
       const request = c.req.valid("json");
       const email = (request.email ?? "").toLowerCase();
-      const hashedPassword = hashSync(request.password, 8);
-      
+      const hashedPassword = await bcrypt.hash(request.password, 10);
+
       try {
         // Check if user with the same email already exists
         const existingUser = await db(c.env).users.findFirst({
@@ -434,8 +433,10 @@ const AuthController = Router
           c.env.JWT_SECRET
         );
         
-        // Create verification URL
-        const verificationUrl = `${c.req.header('Origin') || 'https://www.leamspoyostate.com/'}/verify-email?token=${verificationToken}`;
+        // Create verification URL that points to the API endpoint
+        const verificationUrl = new URL(c.req.url); // Gets the base from the current request
+        verificationUrl.pathname = '/api/auth/verify-email'; // Sets the correct API path
+        verificationUrl.search = `?token=${verificationToken}`; // Adds the token
         
         // Send verification email
         await emailService.sendVerificationEmail(

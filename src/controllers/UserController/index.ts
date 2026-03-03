@@ -1,7 +1,7 @@
 import db from "~/db";
 import Response from "~/utils/response";
 import { z } from "zod";
-import { hashSync } from "bcrypt-ts";
+import bcrypt from "bcryptjs";
 import validationMiddleware from "~/middleware/validationMiddleware";
 import App from "~/app";
 import { requireAdmin } from "~/middleware/require-admin";
@@ -115,7 +115,7 @@ const UserController = App.basePath("")
     }),
     async (c) => {
       const request = c.req.valid("json");
-      const hashedPassword = hashSync(request.password, 8);
+      const hashedPassword = await bcrypt.hash(request.password, 10);
       try {
         const newUser = await db(c.env).users.create({
           data: {

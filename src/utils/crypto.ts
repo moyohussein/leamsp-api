@@ -1,4 +1,4 @@
-import { hash as bcryptHash, compare as bcryptCompare, compareSync } from 'bcrypt-ts';
+import bcrypt from 'bcryptjs';
 
 export async function generateToken(bytes: number = 32): Promise<string> {
   const array = new Uint8Array(bytes);
@@ -25,7 +25,7 @@ export async function sha256Hex(value: string): Promise<string> {
  * @returns Promise that resolves to the hashed password
  */
 export async function hashPassword(password: string): Promise<string> {
-  return await bcryptHash(password, 10);
+  return await bcrypt.hash(password, 10);
 }
 
 /**
@@ -35,8 +35,8 @@ export async function hashPassword(password: string): Promise<string> {
  * @returns Promise that resolves to true if the passwords match
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return await bcryptCompare(password, hash);
+  return await bcrypt.compare(password, hash);
 }
 
 // Export the sync version for middleware that needs it
-export { compareSync };
+export const compareSync = bcrypt.compareSync;

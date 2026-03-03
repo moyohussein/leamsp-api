@@ -1,4 +1,5 @@
-import App from "~/app";
+import { Hono } from "hono";
+import type { Bindings } from "~/types";
 import db from "~/db";
 import Response from "~/utils/response";
 import { z } from "zod";
@@ -26,8 +27,8 @@ const addOneYear = (d: Date): Date => {
   return nd;
 };
 
-// Use basePath for proper mounting
-const Router = App.basePath("");
+// Use new Hono instance instead of basePath to avoid route matching issues
+const Router = new Hono<{ Bindings: Bindings }>();
 
 // POST /generate - MUST COME FIRST (will be mounted at /api/id-cards/generate)
 Router.post("/generate", async (c) => {

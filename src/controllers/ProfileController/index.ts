@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Hono } from "hono";
 import db from "~/db";
 import Response from "~/utils/response";
-import { compareSync, hashSync } from "bcrypt-ts";
+import bcrypt from "bcryptjs";
 import type { Bindings } from "~/types";
 
 /**
@@ -118,11 +118,11 @@ ProfileController.put("/password", async (c) => {
   if (!user) {
     return new Response(c).error("User not found", 404 as any);
   }
-  const ok = compareSync(parsed.data.currentPassword, user.password);
+  const ok = await bcrypt.compare(parsed.data.currentPassword, user.password);
   if (!ok) {
     return new Response(c).error("Current password is incorrect", 400 as any);
   }
-  const hashed = hashSync(parsed.data.newPassword, 8);
+  const hashed = await bcrypt.hash(parsed.data.newPassword, 10);
   await db(c.env).users.update({
     where: { id: userId },
     data: { password: hashed },

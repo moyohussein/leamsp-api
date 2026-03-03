@@ -22,8 +22,9 @@ app.use("*", securityHeaders());
 // CORS for browser clients (allow your local dev frontend and credentials)
 app.use("*", cors({
   origin: [
+    "http://localhost:3000",
+    "http://localhost:8787",
     "https://www.leamspoyostate.com/",
-    // Production frontend URLs
     "https://www.leamspoyostate.com",
     "https://leamspoyostate.com",
   ],
@@ -51,7 +52,9 @@ app.get('/api/test-cors', (c) => {
 
 const guestPage = [
   "/",
+  "/api/",
   "/favicon.ico",
+  "/api/favicon.ico",
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/verify-email",
@@ -64,12 +67,18 @@ const guestPage = [
   "/api/cloudinary",
 ];
 
+// Add 404 handler before JWT middleware to properly handle non-existent endpoints
+app.notFound((c) => {
+  return c.json({ error: "Not Found", message: "The requested endpoint does not exist" }, 404);
+});
+
 app.use("*", (c, next) => {
   const path = c.req.path;
   // Allow public endpoints
   const isPublic =
     guestPage.includes(path) ||
     path.startsWith("/api/id-cards/verify/") ||
+    path.startsWith("/api/invitations/validate/") ||
     /^\/api\/id-cards\/\d+\/image$/.test(path);
   if (isPublic) {
     return next();
@@ -95,7 +104,10 @@ app.use("*", async (c, next) => {
 });
 
 // Public health/home endpoint
-app.get("/", (c) => c.text("leamsp-api is running"));
+app.get("/", (c) => {
+  console.log("Root endpoint hit, path:", c.req.path);
+  return c.text("leamsp-api is running");
+});
 
 // Public empty favicon to avoid 401 errors in browsers
 app.get("/favicon.ico", (c) => c.body(null, 204));

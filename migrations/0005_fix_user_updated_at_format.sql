@@ -1,16 +1,30 @@
 -- Fix the updatedAt format in the users table to be compatible with Prisma
--- First, add a temporary column to store the fixed timestamps
-ALTER TABLE users ADD COLUMN updated_at_temp TIMESTAMP;
+-- SQLite-compatible migration
 
--- Convert the existing updatedAt values to the correct format
-UPDATE users SET updated_at_temp = datetime(updatedAt) WHERE updatedAt IS NOT NULL;
+-- Create a new table with the correct schema
+CREATE TABLE users_new (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    password TEXT NOT NULL,
+    image TEXT,
+    role TEXT NOT NULL DEFAULT 'USER',
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    emailVerified TIMESTAMP,
+    deletedAt TIMESTAMP
+);
 
--- Drop the old column
-ALTER TABLE users DROP COLUMN updatedAt;
+-- Copy data from old table to new table
+INSERT INTO users_new (id, email, name, password, image, role, createdAt, updatedAt, emailVerified, deletedAt)
+SELECT id, email, name, password, image, role, createdAt, updatedAt, emailVerified, deletedAt
+FROM users;
 
--- Rename the temporary column to updatedAt
-ALTER TABLE users RENAME COLUMN updated_at_temp TO updatedAt;
+-- Drop old table
+DROP TABLE users;
 
--- Add the NOT NULL constraint and default value
-ALTER TABLE users ALTER COLUMN updatedAt SET DEFAULT CURRENT_TIMESTAMP;
-ALTER TABLE users ALTER COLUMN updatedAt SET NOT NULL;
+-- Rename new table to users
+ALTER TABLE users_new RENAME TO users;
+
+-- Recreate indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);

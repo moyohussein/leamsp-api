@@ -56,7 +56,7 @@ async function sendInvitationEmail(
   role?: string,
   baseUrl?: string
 ): Promise<{ success: boolean; error?: string }> {
-  const acceptUrl = `${baseUrl || 'https://www.leamspoyostate.com/'}/accept-invitation?token=${token}`;
+  const acceptUrl = new URL('/auth/complete-registration?token=' + token, baseUrl || 'https://www.leamspoyostate.com/').toString();
   
   const subject = `You're invited to join Leamsp Oyo state`;
   const html = `
@@ -110,6 +110,55 @@ If you didn't expect this invitation, you can safely ignore this email.`;
 }
 
 const InvitationController = new Hono()
+
+  // Validate invitation token
+  .get('/validate/:token', async (c) => {
+    try {
+      const { token } = c.req.param();
+
+      if (!token) {
+        return new Response(c).error('Invitation token is required', 400);
+      }
+
+      const dbClient = db(c.env as any);
+      const invitation = await dbClient.invitation.findUnique({
+        where: { token },
+      });
+
+      if (!invitation) {
+        return new Response(c).error('This invitation is not valid.', 404);
+      }
+
+      if (invitation.status !== 'PENDING') {
+        return new Response(c).error(`This invitation has already been ${invitation.status.toLowerCase()}.`, 400);
+      }
+
+      if (isAfter(new Date(), invitation.expiresAt)) {
+        // Mark as expired in the background, but don't wait for it
+        c.executionCtx.waitUntil(
+          dbClient.invitation.update({
+            where: { id: invitation.id },
+            data: { status: 'EXPIRED' },
+          })
+        );
+        return new Response(c).error('This invitation has expired.', 410);
+      }
+
+      // If valid, return non-sensitive details
+      return new Response(c).success({
+        message: 'Invitation is valid.',
+        data: {
+          email: invitation.email,
+          role: invitation.role,
+          expiresAt: invitation.expiresAt,
+        },
+      });
+
+    } catch (error) {
+      console.error('Validate invitation error:', error);
+      return new Response(c).error('Failed to validate invitation', 500);
+    }
+  })
   
   // Create invitation
   .post('/', invitationRateLimit, async (c) => {

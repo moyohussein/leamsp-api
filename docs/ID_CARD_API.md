@@ -14,7 +14,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 
 ### 1. Create ID Card
 
-- **Endpoint:** `POST /api/id-card`
+- **Endpoint:** `POST /api/id-cards`
 - **Description:** Creates a new ID card for the authenticated user.
 - **Request Body:**
   ```json
@@ -26,7 +26,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 - **Example `curl`:**
   ```bash
   TOKEN="your_jwt_token"
-  curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"displayName": "My Test Card", "attributes": {"department": "Engineering"}}' https://leamsp-api.attendance.workers.dev/api/id-card
+  curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"displayName": "My Test Card", "attributes": {"department": "Engineering"}}' https://leamsp-api.attendance.workers.dev/api/id-cards
   ```
 - **Success Response (201):**
   ```json
@@ -44,7 +44,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 
 ### 2. Generate ID Card Token
 
-- **Endpoint:** `POST /api/id-card/generate`
+- **Endpoint:** `POST /api/id-cards/generate`
 - **Description:** Generates a short-lived token for an existing ID card, which can be used for verification or rendering.
 - **Request Body:**
   ```json
@@ -55,7 +55,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 - **Example `curl`:**
   ```bash
   TOKEN="your_jwt_token"
-  curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"cardId": 1}' https://leamsp-api.attendance.workers.dev/api/id-card/generate
+  curl -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"cardId": 1}' https://leamsp-api.attendance.workers.dev/api/id-cards/generate
   ```
 - **Success Response (200):**
   ```json
@@ -70,11 +70,11 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 
 ### 3. Verify ID Card Token
 
-- **Endpoint:** `GET /api/id-card/verify/:token`
+- **Endpoint:** `GET /api/id-cards/verify/:token`
 - **Description:** Verifies a generated ID card token. This endpoint is public and does not require authentication.
 - **Example `curl`:**
   ```bash
-  curl https://leamsp-api.attendance.workers.dev/api/id-card/verify/a_generated_token_string
+  curl https://leamsp-api.attendance.workers.dev/api/id-cards/verify/a_generated_token_string
   ```
 - **Success Response (200):**
   ```json
@@ -93,11 +93,11 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 
 ### 4. Get ID Card Image
 
-- **Endpoint:** `GET /api/id-card/:id/image`
+- **Endpoint:** `GET /api/id-cards/:id/image`
 - **Description:** Retrieves the image for a specific ID card. This endpoint is public.
 - **Example `curl`:**
   ```bash
-  curl https://leamsp-api.attendance.workers.dev/api/id-card/1/image
+  curl https://leamsp-api.attendance.workers.dev/api/id-cards/1/image
   ```
 - **Success Response (200):**
   - If an image exists, it returns the image data directly or a JSON object with a URL.
@@ -111,12 +111,12 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 
 ### 5. Get Latest ID Card
 
-- **Endpoint:** `GET /api/id-card`
+- **Endpoint:** `GET /api/id-cards`
 - **Description:** Retrieves the most recently created ID card for the authenticated user, along with its status and recent verification activity.
 - **Example `curl`:**
   ```bash
   TOKEN="your_jwt_token"
-  curl -H "Authorization: Bearer $TOKEN" https://leamsp-api.attendance.workers.dev/api/id-card
+  curl -H "Authorization: Bearer $TOKEN" https://leamsp-api.attendance.workers.dev/api/id-cards
   ```
 - **Success Response (200):**
   ```json
@@ -126,7 +126,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
       "id": "1",
       "expiresAt": "2025-08-12T12:00:00.000Z",
       "status": "active",
-      "imageUrl": "/api/id-card/1/image",
+      "imageUrl": "/api/id-cards/1/image",
       "user": {
         "id": "6",
         "name": "Test User",
@@ -135,14 +135,14 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
         "role": "USER"
       },
       "recentVerifications": [],
-      "previewUrl": "/api/id-card/preview"
+      "previewUrl": "/api/id-cards/preview"
     }
   }
   ```
 
 ### 6. List ID Cards (Paginated)
 
-- **Endpoint:** `GET /api/id-card/list`
+- **Endpoint:** `GET /api/id-cards/list`
 - **Description:** Retrieves a paginated list of all ID cards belonging to the authenticated user.
 - **Query Parameters:**
   - `page` (number, optional, default: 1)
@@ -150,7 +150,7 @@ Authorization: Bearer <YOUR_JWT_TOKEN>
 - **Example `curl`:**
   ```bash
   TOKEN="your_jwt_token"
-  curl -H "Authorization: Bearer $TOKEN" "https://leamsp-api.attendance.workers.dev/api/id-card/list?page=1&pageSize=5"
+  curl -H "Authorization: Bearer $TOKEN" "https://leamsp-api.attendance.workers.dev/api/id-cards/list?page=1&pageSize=5"
   ```
 - **Success Response (200):**
   ```json
