@@ -1,0 +1,56 @@
+name = "leamsp-api"
+main = "src/index.ts"
+compatibility_date = "2025-07-31"
+compatibility_flags = ["nodejs_compat"]
+
+# Build configuration
+[build]
+command = ""
+
+# Environment variables for all environments
+[vars]
+ENVIRONMENT = "development"
+
+# Top-level D1 binding to avoid missing DB on default environment deploys
+[[d1_databases]]
+binding = "DB"
+database_name = "leamsp-db"
+database_id = "6c947c3b-3952-4df0-85f3-2999bb762f02"
+migrations_dir = "migrations"
+
+# Production environment
+[env.production]
+name = "leamsp-api"
+workers_dev = true
+
+[env.production.vars]
+ENVIRONMENT = "production"
+DEV_MODE = "false"
+EMAIL_FROM = "noreply@leamspoyostate.com"
+# Note: Set these secrets via Cloudflare Dashboard or environment variables
+# BREVO_API_KEY = "your-brevo-api-key-here"
+# JWT_SECRET = "your-jwt-secret-min-32-chars-here"
+
+# D1 Database configuration for production
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "leamsp-db"
+database_id = "6c947c3b-3952-4df0-85f3-2999bb762f02"
+migrations_dir = "migrations"
+
+# Development environment
+[env.development]
+name = "leamsp-api-dev"
+workers_dev = true
+
+[env.development.vars]
+ENVIRONMENT = "development"
+EMAIL_FROM = "noreply@leamspoyostate.com"
+
+# Local D1 Database configuration for development
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "leamsp-db"
+database_id = "6c947c3b-3952-4df0-85f3-2999bb762f02"
+migrations_dir = "migrations_new"
+ENVIRONMENT = "development"
