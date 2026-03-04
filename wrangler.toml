@@ -27,9 +27,14 @@ workers_dev = true
 ENVIRONMENT = "production"
 DEV_MODE = "false"
 EMAIL_FROM = "noreply@leamspoyostate.com"
-# Note: Set these secrets via Cloudflare Dashboard or environment variables
+# Note: Set these secrets via Cloudflare Dashboard environment variables
 # BREVO_API_KEY = "your-brevo-api-key-here"
 # JWT_SECRET = "your-jwt-secret-min-32-chars-here"
+# CLOUDINARY_CLOUD_NAME = "your-cloud-name"
+# CLOUDINARY_API_KEY = "your-api-key"
+# CLOUDINARY_API_SECRET = "your-api-secret"
+# CLOUDINARY_UPLOAD_PRESET = "leamsp"
+# CLOUDINARY_FOLDER = "leamsp"
 
 # D1 Database configuration for production
 [[env.production.d1_databases]]
