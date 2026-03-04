@@ -24,6 +24,7 @@ app.use("*", cors({
   origin: [
     "http://localhost:3000",
     "http://localhost:8787",
+    "https://leamsp-web.vercel.app",
     "https://www.leamspoyostate.com/",
     "https://www.leamspoyostate.com",
     "https://leamspoyostate.com",
